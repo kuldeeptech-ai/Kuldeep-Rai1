@@ -57,11 +57,29 @@ const POPULAR_COLORS = [
   'Olive Green',
 ];
 
-// Authorized emails that have instant owner permissions
-const AUTHORIZED_EMAILS = [
-  'prostreamflix@gmail.com',
-  'looksmenswear@gmail.com',
-];
+// Primary verified store owner email
+const PRIMARY_OWNER_EMAIL = 'prostreamflix@gmail.com';
+
+export const getAuthorizedEmails = (): string[] => {
+  const saved = localStorage.getItem('looks_authorized_emails');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((e: string) => e.toLowerCase().trim());
+      }
+    } catch {
+      // fallback
+    }
+  }
+  return [PRIMARY_OWNER_EMAIL.toLowerCase(), 'looksmenswear@gmail.com'];
+};
+
+export const isEmailAuthorized = (email?: string | null): boolean => {
+  if (!email) return false;
+  const list = getAuthorizedEmails();
+  return list.includes(email.toLowerCase().trim());
+};
 
 export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   isOpen,
@@ -72,6 +90,10 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isPasscodeAuthenticated, setIsPasscodeAuthenticated] = useState<boolean>(false);
   const [authMethod, setAuthMethod] = useState<'google' | 'email' | 'passcode'>('google');
+
+  // Authorized emails list state for Settings tab
+  const [authorizedEmailsList, setAuthorizedEmailsList] = useState<string[]>(getAuthorizedEmails);
+  const [newManagerEmailInput, setNewManagerEmailInput] = useState<string>('');
 
   // Login Form Inputs
   const [emailInput, setEmailInput] = useState<string>('');
@@ -116,10 +138,21 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     text: string;
   } | null>(null);
 
-  // Track Firebase Auth state
+  // Track Firebase Auth state with authorization check
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userEmail = (user.email || '').toLowerCase().trim();
+        if (isEmailAuthorized(userEmail)) {
+          setCurrentUser(user);
+        } else {
+          // Unauthorized email - auto sign out
+          await signOut(auth);
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -133,7 +166,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   }, []);
 
   const isAccessGranted =
-    Boolean(currentUser) || isPasscodeAuthenticated;
+    (currentUser !== null && isEmailAuthorized(currentUser.email)) || isPasscodeAuthenticated;
 
   // Load products when open and authorized
   const loadAdminProducts = async () => {
@@ -159,7 +192,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
 
   if (!isOpen) return null;
 
-  // 1. Google Sign-In Handler
+  // 1. Google Sign-In Handler with strict permission check
   const handleGoogleSignIn = async () => {
     setAuthError(null);
     setAuthLoading(true);
@@ -167,6 +200,15 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       if (user) {
+        const email = (user.email || '').toLowerCase().trim();
+        if (!isEmailAuthorized(email)) {
+          await signOut(auth);
+          setCurrentUser(null);
+          setAuthError(
+            `Access Denied: Aapka email (${email}) is store ke Admin Panel ke liye authorized nahi hai. Sirf store owner (${PRIMARY_OWNER_EMAIL}) ko access ki permission hai.`
+          );
+          return;
+        }
         setCurrentUser(user);
       }
     } catch (err: unknown) {
@@ -180,7 +222,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     }
   };
 
-  // 2. Email & Password Login Handler
+  // 2. Email & Password Login Handler with permission check
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput.trim() || !emailPasswordInput.trim()) {
@@ -190,7 +232,15 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     setAuthError(null);
     setAuthLoading(true);
     try {
-      const cred = await signInWithEmailAndPassword(auth, emailInput.trim(), emailPasswordInput);
+      const targetEmail = emailInput.trim().toLowerCase();
+      if (!isEmailAuthorized(targetEmail)) {
+        setAuthError(
+          `Access Denied: Yeh email (${targetEmail}) store manager list me shamil nahi hai.`
+        );
+        setAuthLoading(false);
+        return;
+      }
+      const cred = await signInWithEmailAndPassword(auth, targetEmail, emailPasswordInput);
       setCurrentUser(cred.user);
     } catch (err: unknown) {
       setAuthError(
@@ -1352,6 +1402,69 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                         Save New Key
                       </button>
                     </form>
+                  </div>
+
+                  {/* Authorized Manager Emails Manager */}
+                  <div className="p-4 bg-neutral-900 border border-neutral-850 rounded-sm space-y-3">
+                    <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-amber-400" />
+                      <span>Authorized Manager Emails</span>
+                    </h4>
+                    <p className="text-neutral-400 text-[11px]">
+                      Only emails listed here have permission to log in with Google and manage store products.
+                    </p>
+
+                    <div className="space-y-1.5 pt-1">
+                      {authorizedEmailsList.map((email) => (
+                        <div
+                          key={email}
+                          className="flex items-center justify-between p-2 bg-neutral-950 border border-neutral-800 rounded-xs text-[11px]"
+                        >
+                          <span className="font-mono text-neutral-200">{email}</span>
+                          {email !== PRIMARY_OWNER_EMAIL && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = authorizedEmailsList.filter((e) => e !== email);
+                                setAuthorizedEmailsList(updated);
+                                localStorage.setItem('looks_authorized_emails', JSON.stringify(updated));
+                              }}
+                              className="text-rose-400 hover:text-rose-300 text-[10px]"
+                            >
+                              Remove
+                            </button>
+                          )}
+                          {email === PRIMARY_OWNER_EMAIL && (
+                            <span className="text-[10px] text-amber-400 uppercase font-bold">Owner</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <input
+                        type="email"
+                        placeholder="manager@gmail.com"
+                        value={newManagerEmailInput}
+                        onChange={(e) => setNewManagerEmailInput(e.target.value)}
+                        className="flex-1 bg-neutral-950 border border-neutral-800 rounded-xs p-1.5 text-xs text-white outline-none focus:border-amber-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const val = newManagerEmailInput.trim().toLowerCase();
+                          if (val && !authorizedEmailsList.includes(val)) {
+                            const updated = [...authorizedEmailsList, val];
+                            setAuthorizedEmailsList(updated);
+                            localStorage.setItem('looks_authorized_emails', JSON.stringify(updated));
+                            setNewManagerEmailInput('');
+                          }
+                        }}
+                        className="py-1.5 px-3 bg-amber-400 text-neutral-950 font-bold rounded-xs text-xs"
+                      >
+                        + Add Email
+                      </button>
+                    </div>
                   </div>
 
                   <div className="p-4 bg-neutral-900 border border-neutral-850 rounded-sm space-y-2 text-neutral-400">

@@ -2,7 +2,7 @@
 
 A production-ready, mobile-first product catalogue and WhatsApp enquiry web application built for **Looks Mens Wear**, Anjahiya Bazar, Mehdawal, Uttar Pradesh.
 
-Powered by **React**, **TypeScript**, **Tailwind CSS**, and **Cloud Firestore (Project: huyt-2f60b)**, featuring:
+Powered by **React**, **TypeScript**, **Tailwind CSS**, and **Cloud Firestore**, featuring:
 - **Direct WhatsApp Chat ("WhatsApp Par Baat Karein")** with pre-filled product details, sizes, colors, and prices.
 - **Confidential Store Manager Access (Admin Panel)** accessible strictly via the Menu button with Google Sign-In, Email/Password, or secure Passcode.
 - **Dark Mode & Light Mode** toggle with instant local storage persistence.
@@ -30,7 +30,10 @@ Powered by **React**, **TypeScript**, **Tailwind CSS**, and **Cloud Firestore (P
 # 1. Clone repository & install dependencies
 npm install
 
-# 2. Start local development server
+# 2. Configure your environment variables in .env (see .env.example)
+cp .env.example .env
+
+# 3. Start local development server
 npm run dev
 ```
 
@@ -38,25 +41,15 @@ The app will run locally at `http://localhost:3000`.
 
 ---
 
-## 3. Connected Firebase Project
-
-- **Project ID:** `huyt-2f60b`
-- **Firestore Database Collection:** `products`
-- **Authentication Providers:** Google Sign-In & Email/Password
-
-Credentials are pre-configured in `src/lib/firebase.ts` and `.env.example`.
-
----
-
-## 4. Store Manager Access (Admin Panel)
+## 3. Store Manager Access (Admin Panel)
 
 Per store security guidelines, the Admin Panel is **NOT** exposed publicly on the homepage or footer:
 1. Click the **Menu** button (top right on desktop or hamburger on mobile).
 2. At the bottom of the menu, click **"Store Manager Access"**.
 3. Choose your preferred authentication method:
-   - **Google Sign-In**: Click "Sign in with Google" for instant one-click login.
+   - **Google Sign-In**: Click "Sign in with Google" (Authorized store owner email only).
    - **Email & Password**: Log in with authorized credentials.
-   - **Store Passcode**: Authenticate via the master store passcode.
+   - **Store Passcode**: Authenticate via the master store security key.
 4. **Features inside Admin Panel**:
    - Add new products with automatic WebP compression under 180 KB.
    - Edit prices, descriptions, sizes, colors, and photos of existing garments.
@@ -67,19 +60,19 @@ Per store security guidelines, the Admin Panel is **NOT** exposed publicly on th
 
 ---
 
-## 5. Deployment Guide (Vercel & Netlify)
+## 4. Deployment Guide (Vercel & Netlify)
 
 ### Deploying to Vercel
 1. Push this project to GitHub.
 2. In [Vercel](https://vercel.com), click **Add New Project** and select this repository.
-3. In **Environment Variables**, add:
+3. In **Environment Variables**, add the values from your Firebase Console project settings:
    ```env
-   VITE_FIREBASE_API_KEY=AIzaSyCZM3KqKdifJd3nS6lrswD9Qcbw7D8nMRo
-   VITE_FIREBASE_AUTH_DOMAIN=huyt-2f60b.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=huyt-2f60b
-   VITE_FIREBASE_STORAGE_BUCKET=huyt-2f60b.firebasestorage.app
-   VITE_FIREBASE_MESSAGING_SENDER_ID=846658556542
-   VITE_FIREBASE_APP_ID=1:846658556542:web:5f1a011bac2466aa5c3e2f
+   VITE_FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY
+   VITE_FIREBASE_AUTH_DOMAIN=YOUR_PROJECT_ID.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=YOUR_PROJECT_ID
+   VITE_FIREBASE_STORAGE_BUCKET=YOUR_PROJECT_ID.firebasestorage.app
+   VITE_FIREBASE_MESSAGING_SENDER_ID=YOUR_MESSAGING_SENDER_ID
+   VITE_FIREBASE_APP_ID=YOUR_FIREBASE_APP_ID
    ```
 4. Build command: `npm run build`
 5. Output folder: `dist`
@@ -88,5 +81,5 @@ Per store security guidelines, the Admin Panel is **NOT** exposed publicly on th
 ### Deploying to Netlify
 1. Connect repository in [Netlify](https://netlify.com).
 2. Set Build Command: `npm run build` and Publish directory: `dist`.
-3. Add the `VITE_FIREBASE_*` variables in Site configuration.
+3. Add the `VITE_FIREBASE_*` variables in Site configuration &gt; Environment variables.
 4. Deploy site.
