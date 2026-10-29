@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Product document for Looks Mens Wear product catalogue",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Product display name",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-friendly product slug",
+          "pattern": "^[a-z0-9\\-]+$",
+          "maxLength": 140
+        },
+        "category": {
+          "type": "string",
+          "description": "Product category",
+          "enum": [
+            "Shirts",
+            "T-Shirts",
+            "Jeans",
+            "Trousers",
+            "Formal Wear",
+            "Casual Wear",
+            "Jackets",
+            "Ethnic Wear",
+            "Festive Wear"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of garment fabric, cut, and care",
+          "maxLength": 2000
+        },
+        "price": {
+          "type": "number",
+          "description": "Configured retail price in INR (optional; never displayed as ₹0 if null)"
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "Original MRP price in INR for discount display"
+        },
+        "sizes": {
+          "type": "array",
+          "description": "List of available garment sizes (e.g., S, M, L, XL, 32, 34, 38)"
+        },
+        "colors": {
+          "type": "array",
+          "description": "List of available garment colors"
+        },
+        "imageBase64": {
+          "type": "string",
+          "description": "Compressed WebP base64 data URI (approx 800x800, under 200KB)",
+          "maxLength": 400000
+        },
+        "additionalImages": {
+          "type": "array",
+          "description": "Optional list of additional compressed WebP Base64 images"
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether to highlight on homepage featured carousel"
+        },
+        "isNew": {
+          "type": "boolean",
+          "description": "Whether tagged as new arrival"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether visible to public visitors"
+        },
+        "inStock": {
+          "type": "boolean",
+          "description": "Explicit availability flag (only displayed if explicitly defined)"
+        },
+        "sortOrder": {
+          "type": "number",
+          "description": "Display order priority"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["name", "slug", "category", "active"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Store catalogue collection containing men's wear items for public viewing and WhatsApp enquiries"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Looks Mens Wear — Premium Storefront",
+  "description": "Mobile-first product catalogue and WhatsApp enquiry storefront with Cloud Firestore for Looks Mens Wear in Mehdawal, Uttar Pradesh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
